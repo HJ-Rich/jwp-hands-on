@@ -20,7 +20,7 @@ class Junit4TestRunner {
 
         // given
         final Class<Junit4Test> clazz = Junit4Test.class;
-        final String expected = String.join(System.lineSeparator(), "Running Test1", "Running Test2", "");
+        final List<String> expected = List.of("Running Test1", "Running Test2");
 
         // when
         final Junit4Test junit4Test = clazz.getDeclaredConstructor().newInstance();
@@ -34,6 +34,6 @@ class Junit4TestRunner {
 
         // then
         final String actual = out.toString();
-        assertThat(actual).isEqualTo(expected);
+        assertThat(actual).contains(expected);
     }
 }
