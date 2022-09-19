@@ -22,7 +22,11 @@
     - Junit3TestRunner와 거의 흡사하나 필터링 기준만 다르다
     - MyTest 애너테이션의 존재 여부로 필터링한다.
     - `method.isAnnotationPresent(MyTest.class);`
-- [ ] ReflectionTest 클래스의 모든 테스트를 통과시킨다.
+- [x] ReflectionTest 클래스의 모든 테스트를 통과시킨다.
+    - `getConstructor()` 메서드는 public 생성자만 배열로 반환한다
+    - `getDeclaredConstructor()` 메서드는 private 생성자까지 포함해 배열로 반환한다
+    - Field 에 instance를 전달하며 해당 instance의 필드값을 조회할 수도 있다.
+    - 단, private 필드일 경우, setAccessible(true) 선언이 선행되어야 한다.
 - [ ] ReflectionsTest 클래스의 모든 테스트를 통과시킨다.
 
 <br>
