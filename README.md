@@ -27,7 +27,7 @@
     - `getDeclaredConstructor()` 메서드는 private 생성자까지 포함해 배열로 반환한다
     - Field 에 instance를 전달하며 해당 instance의 필드값을 조회할 수도 있다.
     - 단, private 필드일 경우, setAccessible(true) 선언이 선행되어야 한다.
-- [ ] ReflectionsTest 클래스의 모든 테스트를 통과시킨다.
+- [x] ReflectionsTest 클래스의 모든 테스트를 통과시킨다.
 
 <br>
 
