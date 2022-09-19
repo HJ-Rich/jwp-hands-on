@@ -33,6 +33,7 @@ class Junit3TestRunner {
         }
 
         // then
-        assertThat(out.toString()).isEqualTo(expected);
+        final String actual = out.toString();
+        assertThat(actual).isEqualTo(expected);
     }
 }
