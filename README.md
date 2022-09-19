@@ -66,3 +66,18 @@
         - 호출 횟수가 늘어나도 응답되는 counter는 1로 동일
 
 <br>  
+
+## 2단계 - 필터 학습 테스트
+
+- [x] FilterTest를 통과시킨다.
+    - CharacterEncodingFilter에서 ServletResponse의 CharacterEncoding을 UTF-8로 설정함으로써 테스트 통과
+- [x] doFilter 메서드는 어느 시점에 실행될까? 콘솔 로그에서 확인한다.
+    - service 메서드가 호출되기 전에 실행된다.
+    - `9월 20, 2022 2:52:37 오전 org.apache.catalina.core.ApplicationContext log    정보: doFilter() 호출`
+    - `9월 20, 2022 2:52:37 오전 org.apache.catalina.core.ApplicationContext log    정보: service() 호출`
+- [x] 왜 인코딩을 따로 설정해줘야 할까?
+    - https://docs.oracle.com/javaee/7/api/javax/servlet/ServletResponse.html
+    - SMTP, HTML 등의 응답의 기본 인코딩은 `ISO-8859-1` 이다.
+    - 이 인코딩은 한글을 지원하지 않는다.
+
+<br>
