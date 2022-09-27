@@ -30,23 +30,13 @@ class DIContext {
 
     private Object newInstance(Class<?> clazz) {
         if (clazz.isInterface()) {
-            clazz = reflections.getSubTypesOf(clazz)
-                    .stream()
-                    .findAny()
-                    .orElseThrow(NoSuchElementException::new);
+            clazz = findSubtypeClassInfo(clazz);
         }
 
         final Constructor<?> constructor = clazz.getConstructors()[0];
-        final Class<?>[] parameterTypes = constructor.getParameterTypes();
-        final Object[] parameters = Arrays.stream(parameterTypes)
-                .map(this::getBean)
-                .toArray();
+        final Object[] parameters = findParameters(constructor);
 
-        try {
-            return constructor.newInstance(parameters);
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
-            throw new RuntimeException(e);
-        }
+        return newInstance(constructor, parameters);
     }
 
     @SuppressWarnings("unchecked")
@@ -59,5 +49,28 @@ class DIContext {
                     beans.add(instance);
                     return instance;
                 });
+    }
+
+    private Class<?> findSubtypeClassInfo(Class<?> clazz) {
+        return reflections.getSubTypesOf(clazz)
+                .stream()
+                .findAny()
+                .orElseThrow(NoSuchElementException::new);
+    }
+
+    private Object[] findParameters(final Constructor<?> constructor) {
+        final Class<?>[] parameterTypes = constructor.getParameterTypes();
+
+        return Arrays.stream(parameterTypes)
+                .map(this::getBean)
+                .toArray();
+    }
+
+    private Object newInstance(final Constructor<?> constructor, final Object[] parameters) {
+        try {
+            return constructor.newInstance(parameters);
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
