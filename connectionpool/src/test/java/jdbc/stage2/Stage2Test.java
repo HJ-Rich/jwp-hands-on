@@ -1,19 +1,20 @@
 package jdbc.stage2;
 
+import static com.zaxxer.hikari.util.UtilityElf.quietlySleep;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
+
 import com.zaxxer.hikari.HikariDataSource;
 import com.zaxxer.hikari.pool.HikariPool;
+import java.lang.reflect.Field;
+import java.sql.Connection;
+import javax.sql.DataSource;
+import jdbc.DataSourceConfig;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-
-import javax.sql.DataSource;
-import java.lang.reflect.Field;
-import java.sql.Connection;
-
-import static com.zaxxer.hikari.util.UtilityElf.quietlySleep;
-import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class Stage2Test {
@@ -21,14 +22,17 @@ class Stage2Test {
     private static final Logger log = LoggerFactory.getLogger(Stage2Test.class);
 
     /**
-     * spring boot에서 설정 파일인 application.yml를 사용하여 DataSource를 설정할 수 있다.
-     * 하지만 DataSource를 여러 개 사용하거나 세부 설정을 하려면 빈을 직접 생성하는 방법을 사용한다.
-     * DataSourceConfig 클래스를 찾아서 어떻게 빈으로 직접 생성하는지 확인해보자.
-     * 그리고 아래 DataSource가 직접 생성한 빈으로 주입 받았는지 getPoolName() 메서드로 확인해보자.
+     * spring boot에서 설정 파일인 application.yml를 사용하여 DataSource를 설정할 수 있다. 하지만 DataSource를 여러 개 사용하거나 세부 설정을 하려면 빈을 직접 생성하는
+     * 방법을 사용한다. DataSourceConfig 클래스를 찾아서 어떻게 빈으로 직접 생성하는지 확인해보자. 그리고 아래 DataSource가 직접 생성한 빈으로 주입 받았는지 getPoolName()
+     * 메서드로 확인해보자.
      */
     @Autowired
     private DataSource dataSource;
 
+    /**
+     * @throws InterruptedException
+     * @see DataSourceConfig#hikariDataSource()
+     */
     @Test
     void test() throws InterruptedException {
         final var hikariDataSource = (HikariDataSource) dataSource;
@@ -40,6 +44,9 @@ class Stage2Test {
             threads[i] = new Thread(getConnection());
         }
 
+        // 20개의 스레드를 생성하고, 실행한뒤, 모두 수행 완료될 때까지 대기하는 코드
+        // 스레드 생성 시 매개변수로 전달하는 Runnable은 커넥션 풀로부터 커넥션을 얻어 0.5초 점유한 뒤 수행 종료되는 내용
+        final long start = System.currentTimeMillis();
         for (final var thread : threads) {
             thread.start();
         }
@@ -47,12 +54,20 @@ class Stage2Test {
         for (final var thread : threads) {
             thread.join();
         }
+        final long end = System.currentTimeMillis();
 
-        // 동시에 많은 요청이 몰려도 최대 풀 사이즈를 유지한다.
-        assertThat(hikariPool.getTotalConnections()).isEqualTo(0);
+        // 20명 요청, 맥스 풀 사이즈 5, 1요청당 0.5초 -> 2초 소요
+        System.out.println((end - start) / 1000);
 
-        // DataSourceConfig 클래스에서 직접 생성한 커넥션 풀.
-        assertThat(hikariDataSource.getPoolName()).isEqualTo("");
+        assertAll(
+                // 동시에 많은 요청이 몰려도 최대 풀 사이즈를 유지한다.
+                () -> assertThat(hikariPool.getTotalConnections()).isEqualTo(5),
+
+                // DataSourceConfig 클래스에서 직접 생성한 커넥션 풀.
+                // bean을 통해 주입된 커넥션이기에 bean 생성 시 설정한 풀 이름이 적용됨. 기본값은 HikariPool-1
+                // bean 설정이 yml 설정보다 우선한다
+                () -> assertThat(hikariDataSource.getPoolName()).isEqualTo("gugu")
+        );
     }
 
     // 데이터베이스에 연결만 하는 메서드. 커넥션 풀에 몇 개의 연결이 생기는지 확인하는 용도.
@@ -70,8 +85,7 @@ class Stage2Test {
     }
 
     // 학습 테스트를 위해 HikariPool을 추출
-    public static HikariPool getPool(final HikariDataSource hikariDataSource)
-    {
+    public static HikariPool getPool(final HikariDataSource hikariDataSource) {
         try {
             Field field = hikariDataSource.getClass().getDeclaredField("pool");
             field.setAccessible(true);
