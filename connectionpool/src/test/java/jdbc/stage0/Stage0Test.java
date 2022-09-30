@@ -42,7 +42,10 @@ class Stage0Test {
      */
     @Test
     void dataSource() throws SQLException {
-        final JdbcDataSource dataSource = null;
+        final JdbcDataSource dataSource = new JdbcDataSource();
+        dataSource.setURL(H2_URL);
+        dataSource.setUser(USER);
+        dataSource.setPassword(PASSWORD);
 
         try (final var connection = dataSource.getConnection()) {
             assertThat(connection.isValid(1)).isTrue();
